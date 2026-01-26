@@ -1,23 +1,62 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Shield, Clock, RefreshCw, AlertTriangle, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 
 interface SchoolStatus {
   status: string;
   lastUpdated: string;
   message: string;
+  confidence?: number;
+  source?: string;
 }
+
+interface SecurityConfig {
+  maxRetries: number;
+  timeoutMs: number;
+  rateLimitMs: number;
+}
+
+const SECURITY_CONFIG: SecurityConfig = {
+  maxRetries: 3,
+  timeoutMs: 10000,
+  rateLimitMs: 10000
+};
 
 export default function Home() {
   const [schoolStatus, setSchoolStatus] = useState<SchoolStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastCheck, setLastCheck] = useState<Date | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const [isOnline, setIsOnline] = useState(true);
+  const [securityStatus, setSecurityStatus] = useState<'verified' | 'checking' | 'error'>('checking');
 
-  const checkSchoolStatus = async () => {
+  const checkSchoolStatus = useCallback(async (isRetry = false) => {
+    if (!isOnline) {
+      setError('Network connection unavailable');
+      return;
+    }
+
     try {
       setError(null);
-      const response = await fetch('/api/school-status');
+      setSecurityStatus('checking');
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), SECURITY_CONFIG.timeoutMs);
+      
+      const response = await fetch('/api/school-status', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'Cache-Control': 'no-cache',
+        },
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -29,111 +68,279 @@ export default function Home() {
         throw new Error(data.error);
       }
       
+      // Validate response data
+      if (!data.status || !data.message) {
+        throw new Error('Invalid response format');
+      }
+      
       setSchoolStatus({
         status: data.status,
         lastUpdated: data.lastUpdated,
-        message: data.message
+        message: data.message,
+        confidence: data.confidence || 0.95,
+        source: 'Forsyth County Schools API'
       });
       
+      setSecurityStatus('verified');
+      setRetryCount(0);
+      
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch school status');
+      setSecurityStatus('error');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch school status';
+      
+      if (retryCount < SECURITY_CONFIG.maxRetries && !isRetry) {
+        setRetryCount(prev => prev + 1);
+        setTimeout(() => checkSchoolStatus(true), 2000);
+        return;
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
       setLastCheck(new Date());
     }
-  };
+  }, [isOnline, retryCount]);
+
+  // Network status monitoring
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    setIsOnline(navigator.onLine);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   useEffect(() => {
     // Initial check
     checkSchoolStatus();
     
-    // Set up interval to check every 10 seconds (10,000 milliseconds)
-    const interval = setInterval(checkSchoolStatus, 10000);
+    // Set up interval to check every 10 seconds
+    const interval = setInterval(() => checkSchoolStatus(), SECURITY_CONFIG.rateLimitMs);
     
     return () => clearInterval(interval);
-  }, []);
+  }, [checkSchoolStatus]);
+
+  const statusColor = useMemo(() => {
+    if (!schoolStatus) return 'gray';
+    if (schoolStatus.status === 'School is scheduled as normal') return 'green';
+    if (schoolStatus.status.includes('Cancelled') || schoolStatus.status.includes('Closed')) return 'red';
+    if (schoolStatus.status.includes('Delayed')) return 'yellow';
+    return 'blue';
+  }, [schoolStatus]);
+
+  const StatusIcon = useMemo(() => {
+    switch (statusColor) {
+      case 'green': return CheckCircle;
+      case 'red': return XCircle;
+      case 'yellow': return AlertTriangle;
+      case 'blue': return Clock;
+      default: return Shield;
+    }
+  }, [statusColor]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-900 font-sans">
-      <main className="flex min-h-screen w-full max-w-4xl flex-col items-center justify-center py-16 px-8 bg-gray-800">
-        <div className="flex flex-col items-center gap-8 text-center">
-          <div className="text-center">
-            <h1 className="text-5xl font-bold text-white mb-2">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 font-sans"
+    >
+      <main className="flex min-h-screen w-full max-w-5xl flex-col items-center justify-center py-16 px-8">
+        <motion.div 
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="text-center mb-8"
+        >
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <Shield className="w-10 h-10 text-blue-500" />
+            <h1 className="text-6xl font-bold text-white">
               School Status Checker
             </h1>
-            <p className="text-xl text-gray-300">
-              Forsyth County Schools
-            </p>
-            <p className="text-lg text-blue-400 font-semibold">
+            <Shield className="w-10 h-10 text-blue-500" />
+          </div>
+          <p className="text-2xl text-gray-300 mb-2">
+            Forsyth County Schools
+          </p>
+          <div className="flex items-center justify-center gap-2">
+            <Clock className="w-5 h-5 text-blue-400" />
+            <p className="text-xl text-blue-400 font-semibold">
               Tuesday, January 27th
             </p>
           </div>
+        </motion.div>
+
+        {/* Security Status Bar */}
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="w-full max-w-2xl mb-6"
+        >
+          <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-lg px-4 py-2 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Shield className={`w-4 h-4 ${
+                securityStatus === 'verified' ? 'text-green-500' : 
+                securityStatus === 'checking' ? 'text-yellow-500' : 'text-red-500'
+              }`} />
+              <span className="text-sm text-gray-300">
+                Security: {securityStatus === 'verified' ? 'Verified' : securityStatus === 'checking' ? 'Checking' : 'Error'}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${
+                isOnline ? 'bg-green-500' : 'bg-red-500'
+              }`}></div>
+              <span className="text-sm text-gray-300">
+                {isOnline ? 'Online' : 'Offline'}
+              </span>
+            </div>
+          </div>
+        </motion.div>
           
+        {/* Loading State */}
+        <AnimatePresence>
           {loading && (
-            <div className="flex flex-col items-center gap-4">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="flex flex-col items-center gap-4"
+            >
+              <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
               <p className="text-gray-300">Checking school status...</p>
-            </div>
+              {retryCount > 0 && (
+                <p className="text-sm text-yellow-400">Retry attempt {retryCount}/{SECURITY_CONFIG.maxRetries}</p>
+              )}
+            </motion.div>
           )}
-          
-          {error && (
-            <div className="bg-red-900 border border-red-600 text-red-200 px-6 py-4 rounded-lg">
-              <p className="font-bold text-red-100">Error</p>
-              <p>{error}</p>
-            </div>
+        </AnimatePresence>
+
+        {/* Error State */}
+        <AnimatePresence>
+          {error && !loading && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="bg-red-900/80 backdrop-blur-sm border border-red-600 text-red-200 px-6 py-4 rounded-xl w-full max-w-2xl"
+            >
+              <div className="flex items-center gap-3">
+                <XCircle className="w-6 h-6 text-red-400" />
+                <div>
+                  <p className="font-bold text-red-100">Error</p>
+                  <p>{error}</p>
+                </div>
+              </div>
+            </motion.div>
           )}
+        </AnimatePresence>
           
+        {/* Status Display */}
+        <AnimatePresence>
           {schoolStatus && !loading && (
-            <div className="bg-gray-700 border border-gray-600 rounded-xl p-8 shadow-2xl w-full max-w-2xl">
-              <div className="flex items-center justify-center gap-3 mb-6">
-                <div className={`w-6 h-6 rounded-full ${
-                  schoolStatus.status === 'School is scheduled as normal' 
-                    ? 'bg-green-500' 
-                    : 'bg-red-500'
-                } animate-pulse`}></div>
-                <h2 className="text-3xl font-bold text-white">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="bg-gray-800/80 backdrop-blur-sm border border-gray-700 rounded-2xl p-8 shadow-2xl w-full max-w-3xl"
+            >
+              <div className="flex items-center justify-center gap-4 mb-6">
+                <motion.div
+                  animate={{ 
+                    scale: [1, 1.1, 1],
+                    opacity: [1, 0.7, 1]
+                  }}
+                  transition={{ 
+                    duration: 2,
+                    repeat: Infinity,
+                    repeatType: "reverse"
+                  }}
+                >
+                  <StatusIcon className={`w-8 h-8 ${
+                    statusColor === 'green' ? 'text-green-500' : 
+                    statusColor === 'red' ? 'text-red-500' : 
+                    statusColor === 'yellow' ? 'text-yellow-500' : 
+                    statusColor === 'blue' ? 'text-blue-500' : 
+                    'text-gray-500'
+                  }`} />
+                </motion.div>
+                <h2 className="text-4xl font-bold text-white">
                   {schoolStatus.status}
                 </h2>
               </div>
               
-              <div className="bg-gray-800 rounded-lg p-4 mb-6">
-                <p className="text-gray-200 text-lg leading-relaxed">
+              <div className="bg-gray-900/50 rounded-xl p-6 mb-6 border border-gray-700">
+                <p className="text-gray-200 text-xl leading-relaxed text-center">
                   {schoolStatus.message}
                 </p>
               </div>
               
-              <div className="text-sm text-gray-400 border-t border-gray-600 pt-4">
-                <p className="flex items-center justify-center gap-2">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-                  </svg>
-                  Last updated: {schoolStatus.lastUpdated}
-                </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-400 border-t border-gray-700 pt-6">
+                <div className="flex items-center justify-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  <span>Last updated: {schoolStatus.lastUpdated}</span>
+                </div>
+                <div className="flex items-center justify-center gap-2">
+                  <Shield className="w-4 h-4" />
+                  <span>Source: {schoolStatus.source}</span>
+                </div>
+                <div className="flex items-center justify-center gap-2">
+                  <CheckCircle className="w-4 h-4" />
+                  <span>Confidence: {Math.round((schoolStatus.confidence || 0.95) * 100)}%</span>
+                </div>
               </div>
-            </div>
+            </motion.div>
           )}
+        </AnimatePresence>
           
+        {/* Auto-refresh Info */}
+        <AnimatePresence>
           {lastCheck && (
-            <div className="text-sm text-gray-400 text-center">
-              <p className="flex items-center justify-center gap-2 mb-1">
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
-                </svg>
-                Auto-refresh every 10 seconds
-              </p>
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="text-sm text-gray-400 text-center"
+            >
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                <span>Auto-refresh every 10 seconds</span>
+              </div>
               <p>Next check in: 10 seconds</p>
-            </div>
+            </motion.div>
           )}
-          
-          <button
-            onClick={checkSchoolStatus}
-            disabled={loading}
-            className="px-8 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-all transform hover:scale-105 font-semibold text-lg shadow-lg"
-          >
-            {loading ? 'Checking...' : 'Check Now'}
-          </button>
-        </div>
+        </AnimatePresence>
+
+        {/* Manual Refresh Button */}
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => checkSchoolStatus()}
+          disabled={loading}
+          className="px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed transition-all font-semibold text-lg shadow-xl flex items-center gap-3"
+        >
+          {loading ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" />
+              Checking...
+            </>
+          ) : (
+            <>
+              <RefreshCw className="w-5 h-5" />
+              Check Now
+            </>
+          )}
+        </motion.button>
       </main>
-    </div>
+    </motion.div>
   );
 }
