@@ -11,7 +11,6 @@ interface SchoolStatus {
   confidence?: number;
   source?: string;
   verified?: boolean;
-  location?: { country: string; state: string };
 }
 
 interface SecurityConfig {
@@ -63,17 +62,10 @@ export default function Home() {
     }
   }, [notificationsEnabled]);
 
-  // Helper function for geographic validation
-  const isLocationAllowed = (location: { country: string; state: string }): boolean => {
-    const allowedCountries = ['US'];
-    const allowedStates = ['GA'];
-    return allowedCountries.includes(location.country) && allowedStates.includes(location.state);
-  };
-
   // Rate limiting helper
   const canMakeRequest = useCallback(() => {
     const now = Date.now();
-    const minInterval = 5000; // 5 seconds between manual requests
+    const minInterval = 2000; // 2 seconds between manual requests (reduced from 5)
     
     if (now - lastRequestTime < minInterval) {
       setRateLimited(true);
@@ -113,11 +105,6 @@ export default function Home() {
       });
       
       if (!response.ok) {
-        if (response.status === 403) {
-          // Geographic restriction - redirect to blocked page
-          window.location.href = '/blocked';
-          return;
-        }
         if (response.status === 429) {
           // Rate limited - don't retry immediately
           throw new Error('Rate limit exceeded. Please wait before checking again.');
@@ -126,18 +113,6 @@ export default function Home() {
       }
       
       const data = await response.json();
-      
-      // Check if API response is verified
-      if (!data.verified) {
-        setSecurityStatus('error');
-        throw new Error('Security verification failed');
-      }
-      
-      // Check for geographic restriction in response
-      if (data.location && process.env.ENABLE_GEOGRAPHIC_RESTRICTION !== 'false' && !isLocationAllowed(data.location)) {
-        window.location.href = '/blocked';
-        return;
-      }
       
       // Use the real API data
       const finalData = data;
@@ -153,7 +128,7 @@ export default function Home() {
       
       setSchoolStatus(finalData);
       setPreviousStatus(finalData.status);
-      setSecurityStatus('verified');
+      setSecurityStatus(finalData.verified ? 'verified' : 'checking');
       setRetryCount(0);
       setCountdown(30); // Reset countdown to 30 seconds
       
