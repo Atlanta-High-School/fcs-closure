@@ -114,8 +114,20 @@ export default function Home() {
       
       const data = await response.json();
       
-      // Use the real API data
-      const finalData = data;
+      // Validate that the API response has the required structure
+      if (!data || typeof data !== 'object') {
+        throw new Error('Invalid API response format');
+      }
+      
+      // Use the real API data with fallback defaults for safety
+      const finalData: SchoolStatus = {
+        status: data.status || 'Unknown Status',
+        message: data.message || 'Unable to retrieve status information',
+        lastUpdated: data.lastUpdated || new Date().toLocaleString(),
+        confidence: data.confidence || 0.5,
+        source: data.source || 'Forsyth County Schools API',
+        verified: data.verified !== false, // Default to true unless explicitly false
+      };
       
       // Check if status changed and send notification
       if (previousStatus && previousStatus !== finalData.status) {
