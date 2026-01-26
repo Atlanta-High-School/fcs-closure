@@ -27,7 +27,7 @@ const SECURITY_CONFIG: SecurityConfig = {
 
 export default function Home() {
   const [schoolStatus, setSchoolStatus] = useState<SchoolStatus | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastCheck, setLastCheck] = useState<Date | null>(null);
   const [retryCount, setRetryCount] = useState(0);
@@ -96,7 +96,7 @@ export default function Home() {
       setLoading(true);
       
       // Call secure API endpoint
-      const response = await fetch('/api/status', {
+      const response = await fetch('/api/school-status', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
