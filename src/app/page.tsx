@@ -135,7 +135,7 @@ export default function Home() {
       }
       
       // Check for geographic restriction in response
-      if (data.location && !isLocationAllowed(data.location)) {
+      if (data.location && process.env.ENABLE_GEOGRAPHIC_RESTRICTION !== 'false' && !isLocationAllowed(data.location)) {
         window.location.href = '/blocked';
         return;
       }

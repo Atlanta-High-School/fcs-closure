@@ -91,23 +91,29 @@ export async function GET(request: NextRequest) {
   const startTime = Date.now();
   
   try {
-    // Geographic validation
-    const location = getClientLocation(request);
-    if (!location) {
-      return NextResponse.json(
-        { error: 'Unable to determine location' },
-        { status: 403, headers: SECURITY_HEADERS }
-      );
-    }
+    // Check if geographic restriction is enabled
+    const geoRestrictionEnabled = process.env.ENABLE_GEOGRAPHIC_RESTRICTION !== 'false';
+    let location: { country: string; state: string } | null = null;
     
-    if (!isLocationAllowed(location)) {
-      return NextResponse.json(
-        { 
-          error: 'Access denied. This service is only available in Georgia, USA.',
-          location: location
-        },
-        { status: 403, headers: SECURITY_HEADERS }
-      );
+    // Geographic validation (only if enabled)
+    if (geoRestrictionEnabled) {
+      location = getClientLocation(request);
+      if (!location) {
+        return NextResponse.json(
+          { error: 'Unable to determine location' },
+          { status: 403, headers: SECURITY_HEADERS }
+        );
+      }
+      
+      if (!isLocationAllowed(location)) {
+        return NextResponse.json(
+          { 
+            error: 'Access denied. This service is only available in Georgia, USA.',
+            location: location
+          },
+          { status: 403, headers: SECURITY_HEADERS }
+        );
+      }
     }
 
     // Rate limiting
