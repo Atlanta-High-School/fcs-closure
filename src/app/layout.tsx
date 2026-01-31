@@ -43,6 +43,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <meta
+          httpEquiv="Content-Security-Policy"
+          content="default-src 'self'; script-src * 'unsafe-eval'; style-src 'self'; connect-src 'self' https://api.weatherapi.com https://www.weatherapi.com;"
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
