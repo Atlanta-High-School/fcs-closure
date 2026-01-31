@@ -40,8 +40,8 @@ function formatDate(): string {
   return `${dayName}, ${monthName} ${day}${suffix}`;
 }
 
-// Helper function to get weather icon
-function getWeatherIcon(condition: string) {
+// Helper function to get weather icon component name
+function getWeatherIconName(condition: string): typeof Sun {
   const lowerCondition = condition.toLowerCase();
   if (lowerCondition.includes('clear') || lowerCondition.includes('sunny')) return Sun;
   if (lowerCondition.includes('rain') || lowerCondition.includes('shower') || lowerCondition.includes('drizzle')) return CloudRain;
@@ -95,7 +95,7 @@ export default async function Home() {
   const schoolStatus = await fetchSchoolStatus();
   
   const currentDate = formatDate();
-  const WeatherIcon = weatherData ? getWeatherIcon(weatherData.condition?.text || '') : Sun;
+  const weatherIconName = weatherData ? weatherData.condition?.text || '' : '';
   
   return (
     <div className="min-h-screen bg-gray-950 text-white overflow-hidden">
@@ -187,7 +187,15 @@ export default async function Home() {
                   
                   <div className="relative h-full flex flex-col">
                     <h3 className="text-xl font-bold mb-8 text-white flex items-center gap-3 tracking-wide">
-                      <WeatherIcon className="w-7 h-7 text-cyan-400 drop-shadow-[0_0_20px_rgba(34,211,238,0.6)]" />
+                      {weatherIconName.toLowerCase().includes('clear') || weatherIconName.toLowerCase().includes('sunny') ? (
+                        <Sun className="w-7 h-7 text-cyan-400 drop-shadow-[0_0_20px_rgba(34,211,238,0.6)]" />
+                      ) : weatherIconName.toLowerCase().includes('rain') || weatherIconName.toLowerCase().includes('shower') || weatherIconName.toLowerCase().includes('drizzle') ? (
+                        <CloudRain className="w-7 h-7 text-cyan-400 drop-shadow-[0_0_20px_rgba(34,211,238,0.6)]" />
+                      ) : weatherIconName.toLowerCase().includes('cloud') || weatherIconName.toLowerCase().includes('overcast') || weatherIconName.toLowerCase().includes('mist') || weatherIconName.toLowerCase().includes('fog') ? (
+                        <Cloud className="w-7 h-7 text-cyan-400 drop-shadow-[0_0_20px_rgba(34,211,238,0.6)]" />
+                      ) : (
+                        <Sun className="w-7 h-7 text-cyan-400 drop-shadow-[0_0_20px_rgba(34,211,238,0.6)]" />
+                      )}
                       Weather Conditions
                     </h3>
                     
@@ -197,7 +205,15 @@ export default async function Home() {
                         <div className="text-center">
                           <div className="relative inline-block mb-4">
                             <div className="absolute inset-0 bg-cyan-500/20 rounded-full blur-2xl" />
-                            <WeatherIcon className="relative w-20 h-20 md:w-24 md:h-24 text-cyan-400" />
+                            {weatherIconName.toLowerCase().includes('clear') || weatherIconName.toLowerCase().includes('sunny') ? (
+                        <Sun className="relative w-20 h-20 md:w-24 md:h-24 text-cyan-400" />
+                      ) : weatherIconName.toLowerCase().includes('rain') || weatherIconName.toLowerCase().includes('shower') || weatherIconName.toLowerCase().includes('drizzle') ? (
+                        <CloudRain className="relative w-20 h-20 md:w-24 md:h-24 text-cyan-400" />
+                      ) : weatherIconName.toLowerCase().includes('cloud') || weatherIconName.toLowerCase().includes('overcast') || weatherIconName.toLowerCase().includes('mist') || weatherIconName.toLowerCase().includes('fog') ? (
+                        <Cloud className="relative w-20 h-20 md:w-24 md:h-24 text-cyan-400" />
+                      ) : (
+                        <Sun className="relative w-20 h-20 md:w-24 md:h-24 text-cyan-400" />
+                      )}
                           </div>
                           <p className="text-4xl md:text-5xl font-black mb-2 tracking-tight">
                             <span className="bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">

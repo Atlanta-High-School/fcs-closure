@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sendEmailAlert } from '@/lib/email-service';
+import { sendMailjetEmail } from '@/lib/mailjet-service';
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await sendEmailAlert(message, weatherData);
+    const result = await sendMailjetEmail(message, weatherData);
     
     if (result) {
       return NextResponse.json(

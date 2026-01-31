@@ -1,5 +1,13 @@
-import { CheckCircle, Sun, Cloud, CloudRain, Wind, Droplets, Clock, MapPin, Smartphone, Bell, BellOff, Mail } from 'lucide-react';
+'use client';
+
+import { CheckCircle, Sun, Cloud, CloudRain, Wind, Droplets, Clock, MapPin, Smartphone, Bell, BellOff, Mail, BellRing } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { 
+  requestNotificationPermission, 
+  sendFCSNotification, 
+  areNotificationsSupported,
+  getNotificationPermission 
+} from '@/lib/notification-service';
 
 // Weather data interface
 interface WeatherData {
@@ -57,6 +65,7 @@ export default function MobilePage() {
   const [countdown, setCountdown] = useState(30);
   const [smsEnabled, setSmsEnabled] = useState(true);
   const [emailEnabled, setEmailEnabled] = useState(true);
+  const [notificationEnabled, setNotificationEnabled] = useState(true);
   const [lastKnownStatus, setLastKnownStatus] = useState<string>('');
 
   const currentDate = formatDate();
@@ -99,12 +108,28 @@ export default function MobilePage() {
       });
       
       if (response.ok) {
-        console.log('✅ Email alert sent successfully via SendGrid');
+        console.log('✅ Email alert sent successfully via Mailjet');
       } else {
         console.log('❌ Email alert failed');
       }
     } catch (error) {
       console.error('Error sending email alert:', error);
+    }
+  };
+
+  // Send desktop notification for status changes
+  const sendDesktopNotification = async (message: string) => {
+    if (!notificationEnabled || !areNotificationsSupported()) return;
+    
+    try {
+      const success = await sendFCSNotification(message, weatherData);
+      if (success) {
+        console.log('✅ Desktop notification sent successfully');
+      } else {
+        console.log('❌ Desktop notification failed');
+      }
+    } catch (error) {
+      console.error('Error sending desktop notification:', error);
     }
   };
 
@@ -129,9 +154,10 @@ export default function MobilePage() {
         // Check for status changes and send alerts if needed
         const currentStatus = schoolJson.message || '';
         if (currentStatus !== lastKnownStatus && currentStatus !== 'No changes detected for Monday, February 2nd') {
-          // Send both SMS and email alerts
+          // Send SMS, email, and desktop alerts
           sendSMSAlert(currentStatus);
           sendEmailAlert(currentStatus);
+          sendDesktopNotification(currentStatus);
           setLastKnownStatus(currentStatus);
         }
       }
@@ -148,6 +174,13 @@ export default function MobilePage() {
   // Initial fetch
   useEffect(() => {
     fetchData();
+  }, []);
+
+  // Request notification permission on mount
+  useEffect(() => {
+    if (areNotificationsSupported()) {
+      requestNotificationPermission();
+    }
   }, []);
 
   // Auto-refresh every 30 seconds
@@ -220,17 +253,18 @@ export default function MobilePage() {
 
         {/* Main Content */}
         <main className="px-4 pb-6">
-          {/* Status Card */}
-          <div className="mb-4">
-            <div className="relative group">
-              {/* Glowing border effect */}
-              <div className="absolute -inset-1 bg-gradient-to-r from-green-500/20 via-cyan-500/20 to-blue-500/20 rounded-2xl blur-lg group-hover:from-green-500/30 group-hover:via-cyan-500/30 group-hover:to-blue-500/30 transition-all duration-500" />
-              
-              <div className="relative bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-2xl">
+          <div className="grid grid-cols-1 gap-4">
+            {/* Status Card */}
+            <div className="h-full">
+              <div className="relative group h-full">
+                {/* Glowing border effect */}
+                <div className="absolute -inset-1 bg-gradient-to-r from-green-500/20 via-cyan-500/20 to-blue-500/20 rounded-2xl blur-lg group-hover:from-green-500/30 group-hover:via-cyan-500/30 group-hover:to-blue-500/30 transition-all duration-500" />
+                
+                <div className="relative bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-2xl h-full">
                 {/* Inner glow */}
                 <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 via-transparent to-cyan-500/5 rounded-2xl" />
                 
-                <div className="relative">
+                <div className="relative h-full flex flex-col justify-between">
                   {/* Glowing checkmark */}
                   <div className="flex items-center justify-center mb-4">
                     <div className="relative">
@@ -262,26 +296,25 @@ export default function MobilePage() {
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Weather Card */}
-          <div className="mb-4">
-            <div className="relative group">
-              {/* Glowing border */}
-              <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-purple-500/20 rounded-2xl blur-lg group-hover:from-cyan-500/30 group-hover:via-blue-500/30 group-hover:to-purple-500/30 transition-all duration-500" />
-              
-              <div className="relative bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-2xl">
+            {/* Weather Card */}
+            <div className="h-full">
+              <div className="relative group h-full">
+                {/* Glowing border */}
+                <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-purple-500/20 rounded-2xl blur-lg group-hover:from-cyan-500/30 group-hover:via-blue-500/30 group-hover:to-purple-500/30 transition-all duration-500" />
+                
+                <div className="relative bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-2xl h-full">
                 {/* Inner glow */}
                 <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-blue-500/5 rounded-2xl" />
                 
-                <div className="relative">
+                <div className="relative h-full flex flex-col">
                   <h3 className="text-lg font-bold mb-4 text-white flex items-center gap-2 tracking-wide">
                     <WeatherIcon className="w-5 h-5 text-cyan-400 drop-shadow-[0_0_15px_rgba(34,211,238,0.6)]" />
                     Weather
                   </h3>
                   
                   {weatherData ? (
-                    <div className="space-y-4">
+                    <div className="space-y-4 flex-1 flex flex-col justify-center">
                       {/* Weather icon and temperature */}
                       <div className="text-center">
                         <div className="relative inline-block mb-2">
@@ -317,7 +350,7 @@ export default function MobilePage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="text-center py-6">
+                    <div className="text-center py-6 flex-1 flex items-center justify-center">
                       <Cloud className="w-12 h-12 text-gray-400 mx-auto mb-2" />
                       <p className="text-gray-400 text-sm">Weather data unavailable</p>
                     </div>
@@ -369,6 +402,23 @@ export default function MobilePage() {
                 >
                   <Mail className="w-3 h-3" />
                   {emailEnabled ? 'ON' : 'OFF'}
+                </button>
+              </div>
+              
+              {/* Desktop Notification Toggle */}
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-300">Desktop Alerts</span>
+                <button
+                  onClick={() => setNotificationEnabled(!notificationEnabled)}
+                  className={`flex items-center gap-2 px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+                    notificationEnabled && areNotificationsSupported() && getNotificationPermission() === 'granted'
+                      ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' 
+                      : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
+                  }`}
+                  disabled={!areNotificationsSupported()}
+                >
+                  <BellRing className="w-3 h-3" />
+                  {notificationEnabled && areNotificationsSupported() && getNotificationPermission() === 'granted' ? 'ON' : 'OFF'}
                 </button>
               </div>
             </div>
