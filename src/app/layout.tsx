@@ -14,11 +14,23 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "FCS School Status Checker",
-  description: "Real-time school status monitoring for Forsyth County Schools - Tuesday, January 27th",
+  description: "Real-time school status monitoring for Forsyth County Schools - Monday, February 2nd",
   icons: {
     icon: '/favicon.ico',
     shortcut: '/favicon.ico',
     apple: '/favicon.ico',
+  },
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'FCS Status',
   },
 };
 

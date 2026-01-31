@@ -1,0 +1,20 @@
+{
+  "name": "FCS School Status",
+  "short_name": "FCS Status",
+  "description": "Real-time school status monitoring for Forsyth County Schools",
+  "start_url": "/mobile",
+  "display": "standalone",
+  "background_color": "#030712",
+  "theme_color": "#06b6d4",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon"
+    }
+  ],
+  "categories": ["education", "utilities"],
+  "lang": "en",
+  "scope": "/mobile"
+}
