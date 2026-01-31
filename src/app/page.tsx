@@ -1,5 +1,4 @@
 import { CheckCircle, Sun, Cloud, CloudRain, Wind, Droplets, Clock, MapPin } from 'lucide-react';
-import { headers } from 'next/headers';
 import RefreshButton from '@/components/refresh-button';
 import { formatDate } from '@/lib/date-utils';
 import { getWeatherIcon } from '@/lib/weather-utils';
@@ -19,21 +18,19 @@ interface SchoolStatus {
   message: string;
 }
 
-async function getBaseUrl(): Promise<string> {
-  const hdrs = await headers();
-  const host = hdrs.get('x-forwarded-host') ?? hdrs.get('host');
-  const protocol = hdrs.get('x-forwarded-proto') ?? (process.env.VERCEL ? 'https' : 'http');
-  if (host) return `${protocol}://${host}`;
+function getBaseUrl(): string {
+  if (process.env.BASE_URL) return process.env.BASE_URL;
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-  return 'http://localhost:3000';
+  return process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3000';
 }
 
 // Fetch weather data
 async function fetchWeatherData(): Promise<WeatherData | null> {
   try {
-    const baseUrl = await getBaseUrl();
+    const baseUrl = getBaseUrl();
     
-    const response = await fetch(`${baseUrl}/api/weather`, {
+    const weatherUrl = baseUrl ? `${baseUrl}/api/weather` : '/api/weather';
+    const response = await fetch(weatherUrl, {
       next: { revalidate: 600 } // Cache for 10 minutes
     });
     
@@ -58,9 +55,10 @@ async function fetchWeatherData(): Promise<WeatherData | null> {
 // Fetch school status
 async function fetchSchoolStatus(): Promise<SchoolStatus | null> {
   try {
-    const baseUrl = await getBaseUrl();
+    const baseUrl = getBaseUrl();
     
-    const response = await fetch(`${baseUrl}/api/status`);
+    const statusUrl = baseUrl ? `${baseUrl}/api/status` : '/api/status';
+    const response = await fetch(statusUrl);
     
     if (!response.ok) {
       throw new Error('School status API request failed');
