@@ -97,17 +97,17 @@ export default async function Home() {
       
       <div className="relative z-10">
         {/* Header */}
-        <header className="text-center py-8 px-4">
+        <header className="text-center py-6 px-4">
           {/* Logo */}
-          <div className="flex justify-center mb-6">
+          <div className="flex justify-center mb-4">
             <img 
               src="/logo.webp" 
               alt="Forsyth County Schools Logo" 
-              className="w-16 h-16 md:w-24 md:h-24 lg:w-28 lg:h-28"
+              className="w-14 h-14 md:w-20 md:h-24 lg:w-24 lg:h-24"
             />
           </div>
           
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-black mb-5 tracking-tight">
+          <h1 className="text-3xl md:text-5xl lg:text-6xl font-black mb-4 tracking-tight">
             <span className="bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent">
               FORSYTH COUNTY
             </span>
@@ -116,20 +116,20 @@ export default async function Home() {
               SCHOOLS
             </span>
           </h1>
-          <p className="text-lg md:text-xl text-gray-400 mb-5 font-light tracking-wide uppercase">
+          <p className="text-base md:text-lg text-gray-400 mb-4 font-light tracking-wide uppercase">
             Real-time Status Monitoring Dashboard
           </p>
-          <div className="flex items-center justify-center gap-3 text-cyan-400">
-            <Clock className="w-5 h-5" />
-            <span className="text-base md:text-lg font-light tracking-wider">{currentDate}</span>
-            <MapPin className="w-5 h-5 ml-3" />
-            <span className="text-base md:text-lg font-light tracking-wider">Forsyth County, GA</span>
+          <div className="flex items-center justify-center gap-2 text-cyan-400">
+            <Clock className="w-4 h-4" />
+            <span className="text-sm md:text-base font-light tracking-wider">{currentDate}</span>
+            <MapPin className="w-4 h-4 ml-2" />
+            <span className="text-sm md:text-base font-light tracking-wider">Forsyth County, GA</span>
           </div>
         </header>
 
         {/* Main Content */}
-        <main className="max-w-7xl mx-auto px-4 pb-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 h-full">
+        <main className="max-w-7xl mx-auto px-4 pb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full">
             {/* Status Card */}
             <div className="h-full">
               {/* Main Status Card - High-Fidelity Glassmorphism */}
@@ -137,25 +137,25 @@ export default async function Home() {
                 {/* Glowing border effect */}
                 <div className="absolute -inset-1 bg-gradient-to-r from-green-500/20 via-cyan-500/20 to-blue-500/20 rounded-3xl blur-xl group-hover:from-green-500/30 group-hover:via-cyan-500/30 group-hover:to-blue-500/30 transition-all duration-500" />
                 
-                <div className="relative bg-black/40 backdrop-blur-xl border border-white/10 rounded-3xl p-7 md:p-9 shadow-2xl hover:bg-black/50 transition-all duration-500 h-full">
+                <div className="relative bg-black/40 backdrop-blur-xl border border-white/10 rounded-3xl p-5 md:p-7 shadow-2xl hover:bg-black/50 transition-all duration-500 h-full">
                   {/* Inner glow */}
                   <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 via-transparent to-cyan-500/5 rounded-3xl" />
                   
                   <div className="relative h-full flex flex-col items-center justify-center text-center">
                     {/* Glowing checkmark */}
-                    <div className="mb-6 relative">
+                    <div className="mb-4 relative">
                       <div className="absolute inset-0 bg-green-500/30 rounded-full blur-2xl animate-pulse" />
-                      <CheckCircle className="relative w-20 h-20 md:w-28 md:h-28 text-green-400 drop-shadow-[0_0_40px_rgba(52,211,153,0.8)]" />
+                      <CheckCircle className="relative w-16 h-16 md:w-24 md:h-24 text-green-400 drop-shadow-[0_0_40px_rgba(52,211,153,0.8)]" />
                     </div>
                     
                     {/* Bold status text */}
-                    <h2 className="text-3xl md:text-4xl lg:text-5xl font-black mb-5 tracking-tight">
+                    <h2 className="text-2xl md:text-3xl lg:text-4xl font-black mb-4 tracking-tight">
                       <span className="bg-gradient-to-r from-green-400 via-emerald-400 to-cyan-400 bg-clip-text text-transparent">
                         SCHOOL IS ON SCHEDULE
                       </span>
                     </h2>
                     
-                    <p className="text-lg md:text-xl text-gray-300 mb-7 font-light tracking-wide">
+                    <p className="text-base md:text-lg text-gray-300 mb-5 font-light tracking-wide">
                       {schoolStatus?.message || 'All operations proceeding normally'}
                     </p>
                     
@@ -173,45 +173,45 @@ export default async function Home() {
                 {/* Glowing border */}
                 <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-purple-500/20 rounded-3xl blur-xl group-hover:from-cyan-500/30 group-hover:via-blue-500/30 group-hover:to-purple-500/30 transition-all duration-500" />
                 
-                <div className="relative bg-black/40 backdrop-blur-xl border border-white/10 rounded-3xl p-6 md:p-8 shadow-2xl hover:bg-black/50 transition-all duration-500 h-full">
+                <div className="relative bg-black/40 backdrop-blur-xl border border-white/10 rounded-3xl p-4 md:p-6 shadow-2xl hover:bg-black/50 transition-all duration-500 h-full">
                   {/* Inner glow */}
                   <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-blue-500/5 rounded-3xl" />
                   
                   <div className="relative h-full flex flex-col">
-                    <h3 className="text-lg font-bold mb-6 text-white flex items-center gap-3 tracking-wide">
-                      <WeatherIcon className="w-6 h-6 text-cyan-400 drop-shadow-[0_0_20px_rgba(34,211,238,0.6)]" />
+                    <h3 className="text-base font-bold mb-4 text-white flex items-center gap-2 tracking-wide">
+                      <WeatherIcon className="w-5 h-5 text-cyan-400 drop-shadow-[0_0_20px_rgba(34,211,238,0.6)]" />
                       Weather Conditions
                     </h3>
                     
                     {weatherData ? (
-                      <div className="space-y-5 flex-1 flex flex-col justify-center">
+                      <div className="space-y-4 flex-1 flex flex-col justify-center">
                         {/* Weather icon and temperature */}
                         <div className="text-center">
                           <div className="relative inline-block mb-4">
                             <div className="absolute inset-0 bg-cyan-500/20 rounded-full blur-2xl" />
-                            <WeatherIcon className="relative w-16 h-16 md:w-20 md:h-20 text-cyan-400" />
+                            <WeatherIcon className="relative w-12 h-12 md:w-16 md:h-16 text-cyan-400" />
                           </div>
-                          <p className="text-3xl md:text-4xl font-black mb-2 tracking-tight">
+                          <p className="text-2xl md:text-3xl font-black mb-2 tracking-tight">
                             <span className="bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
                               {weatherData.temp_f}°F
                             </span>
                           </p>
-                          <p className="text-lg text-gray-300 font-light tracking-wide">
+                          <p className="text-base text-gray-300 font-light tracking-wide">
                             {weatherData.condition?.text || 'Unknown'}
                           </p>
                         </div>
                         
                         {/* Weather details */}
-                        <div className="grid grid-cols-2 gap-5 pt-5 border-t border-white/10">
+                        <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
                           <div className="flex items-center gap-3">
-                            <Wind className="w-5 h-5 text-cyan-400" />
+                            <Wind className="w-4 h-4 text-cyan-400" />
                             <div>
                               <p className="text-xs text-gray-400 uppercase tracking-wider">Wind</p>
                               <p className="text-base font-bold text-white">{weatherData.wind_mph} mph</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
-                            <Droplets className="w-5 h-5 text-cyan-400" />
+                            <Droplets className="w-4 h-4 text-cyan-400" />
                             <div>
                               <p className="text-xs text-gray-400 uppercase tracking-wider">Humidity</p>
                               <p className="text-base font-bold text-white">{weatherData.humidity}%</p>
@@ -221,8 +221,8 @@ export default async function Home() {
                       </div>
                     ) : (
                       <div className="text-center py-12 flex-1 flex items-center justify-center">
-                        <Cloud className="w-14 h-14 text-gray-400 mx-auto mb-3" />
-                        <p className="text-gray-400 text-base">Weather data unavailable</p>
+                        <Cloud className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                        <p className="text-gray-400 text-sm">Weather data unavailable</p>
                       </div>
                     )}
                   </div>
