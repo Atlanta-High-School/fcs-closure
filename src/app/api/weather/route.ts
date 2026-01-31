@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
   try {
     // Use hardcoded key in production, fallback to env var for local dev
     const weatherApiKey = process.env.WEATHER_KEY || 'b15c56de27784749aac160754263101';
+    console.log('🔑 Weather API: Using key (first 8 chars)', weatherApiKey?.substring(0, 8) + '...');
     
     if (!weatherApiKey) {
       console.error('❌ Weather API: WEATHER_KEY not configured');
@@ -26,16 +27,22 @@ export async function GET(request: NextRequest) {
     console.log('🔑 Weather API: Key found, fetching from WeatherAPI.com');
     
     // Fetch weather data from WeatherAPI
-    const weatherResponse = await fetch(
-      `https://api.weatherapi.com/v1/current.json?key=${weatherApiKey}&q=30041&aqi=no`
-    );
+    const apiUrl = `https://api.weatherapi.com/v1/current.json?key=${weatherApiKey}&q=30041&aqi=no`;
+    console.log('🌐 Weather API: Request URL', apiUrl.replace(weatherApiKey, '[REDACTED]'));
+    
+    const weatherResponse = await fetch(apiUrl);
 
     console.log(`📡 Weather API: Response status ${weatherResponse.status}`);
 
     if (!weatherResponse.ok) {
-      console.error('❌ Weather API: Failed to fetch data', weatherResponse.status);
+      const errorText = await weatherResponse.text();
+      console.error('❌ Weather API: Failed to fetch data', {
+        status: weatherResponse.status,
+        statusText: weatherResponse.statusText,
+        bodyPreview: errorText.slice(0, 500),
+      });
       return NextResponse.json(
-        { error: 'Weather data unavailable' },
+        { error: 'Weather data unavailable', details: errorText.slice(0, 200) },
         { status: 502, headers: SECURITY_HEADERS }
       );
     }
