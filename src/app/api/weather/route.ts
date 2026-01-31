@@ -13,7 +13,8 @@ export async function GET(request: NextRequest) {
   console.log('🌤️ Weather API: Request received');
   
   try {
-    const weatherApiKey = process.env.WEATHER_KEY;
+    // Use hardcoded key in production, fallback to env var for local dev
+    const weatherApiKey = process.env.WEATHER_KEY || 'b15c56de27784749aac160754263101';
     
     if (!weatherApiKey) {
       console.error('❌ Weather API: WEATHER_KEY not configured');
