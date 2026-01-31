@@ -261,12 +261,12 @@ export default function MobilePage() {
             </span>
           </div>
           
-          <h1 className={`${deviceInfo.isMobile ? 'text-2xl' : 'text-3xl'} font-black mb-2 tracking-tight`}>
+          <h1 className={`${deviceInfo.isMobile ? 'text-xl' : 'text-3xl'} font-black mb-2 tracking-tight`}>
             <span className="bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent">
               FORSYTH
             </span>
           </h1>
-          <h2 className={`${deviceInfo.isMobile ? 'text-lg' : 'text-xl'} font-black mb-4 tracking-tight text-cyan-400`}>
+          <h2 className={`${deviceInfo.isMobile ? 'text-base' : 'text-xl'} font-black mb-4 tracking-tight text-cyan-400`}>
             COUNTY SCHOOLS
           </h2>
           
@@ -305,7 +305,7 @@ export default function MobilePage() {
                   </div>
                   
                   {/* Bold status text */}
-                  <h2 className={`${deviceInfo.isMobile ? 'text-2xl' : 'text-3xl'} font-black mb-3 tracking-tight text-center`}>
+                  <h2 className={`${deviceInfo.isMobile ? 'text-xl' : 'text-3xl'} font-black mb-3 tracking-tight text-center`}>
                     <span className="bg-gradient-to-r from-green-400 via-emerald-400 to-cyan-400 bg-clip-text text-transparent">
                       SCHOOL IS ON SCHEDULE
                     </span>
@@ -352,7 +352,7 @@ export default function MobilePage() {
                           <div className="absolute inset-0 bg-cyan-500/20 rounded-full blur-xl" />
                           <WeatherIcon className={`relative ${deviceInfo.isMobile ? 'w-8 h-8' : 'w-12 h-12'} text-cyan-400`} />
                         </div>
-                        <p className={`${deviceInfo.isMobile ? 'text-2xl' : 'text-3xl'} font-black mb-1 tracking-tight`}>
+                        <p className={`${deviceInfo.isMobile ? 'text-xl' : 'text-3xl'} font-black mb-1 tracking-tight`}>
                           <span className="bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
                             {weatherData.temp_f}°F
                           </span>
