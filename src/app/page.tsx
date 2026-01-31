@@ -3,10 +3,10 @@ import RefreshButton from '@/components/refresh-button';
 
 // Weather data interface
 interface WeatherData {
-  temp_F: string;
-  weatherDesc: { value: string }[];
-  windspeedMiles: string;
-  humidity: string;
+  temp_f: number;
+  condition: { text: string; icon: string };
+  wind_mph: number;
+  humidity: number;
 }
 
 // School status interface
@@ -44,15 +44,16 @@ function formatDate(): string {
 function getWeatherIcon(condition: string) {
   const lowerCondition = condition.toLowerCase();
   if (lowerCondition.includes('clear') || lowerCondition.includes('sunny')) return Sun;
-  if (lowerCondition.includes('rain') || lowerCondition.includes('shower')) return CloudRain;
-  if (lowerCondition.includes('cloud')) return Cloud;
+  if (lowerCondition.includes('rain') || lowerCondition.includes('shower') || lowerCondition.includes('drizzle')) return CloudRain;
+  if (lowerCondition.includes('cloud') || lowerCondition.includes('overcast') || lowerCondition.includes('mist') || lowerCondition.includes('fog')) return Cloud;
   return Sun; // default
 }
 
 // Fetch weather data
 async function fetchWeatherData(): Promise<WeatherData | null> {
   try {
-    const response = await fetch('https://wttr.in/30041?format=j1', {
+    const apiKey = 'b15c56de27784749aac160754263101';
+    const response = await fetch(`http://api.weatherapi.com/v1/current.json?key=${apiKey}&q=30041&aqi=no`, {
       next: { revalidate: 600 } // Cache for 10 minutes
     });
     
@@ -61,7 +62,7 @@ async function fetchWeatherData(): Promise<WeatherData | null> {
     }
     
     const data = await response.json();
-    return data.current_condition?.[0] || null;
+    return data.current || null;
   } catch (error) {
     // Silently handle weather errors to prevent page crashes
     return null;
@@ -94,7 +95,7 @@ export default async function Home() {
   const schoolStatus = await fetchSchoolStatus();
   
   const currentDate = formatDate();
-  const WeatherIcon = weatherData ? getWeatherIcon(weatherData.weatherDesc[0]?.value || '') : Sun;
+  const WeatherIcon = weatherData ? getWeatherIcon(weatherData.condition?.text || '') : Sun;
   
   return (
     <div className="min-h-screen bg-slate-950 text-white">
@@ -158,10 +159,10 @@ export default async function Home() {
                     <div className="text-center">
                       <WeatherIcon className="w-16 h-16 md:w-20 md:h-20 text-cyan-400 mx-auto mb-4" />
                       <p className="text-3xl font-bold text-white mb-2">
-                        {weatherData.temp_F}°F
+                        {weatherData.temp_f}°F
                       </p>
                       <p className="text-lg text-gray-300 mb-4">
-                        {weatherData.weatherDesc[0]?.value || 'Unknown'}
+                        {weatherData.condition?.text || 'Unknown'}
                       </p>
                     </div>
                     
@@ -170,7 +171,7 @@ export default async function Home() {
                         <Wind className="w-5 h-5 text-cyan-400" />
                         <div>
                           <p className="text-xs text-gray-400">Wind</p>
-                          <p className="text-sm font-semibold text-white">{weatherData.windspeedMiles} mph</p>
+                          <p className="text-sm font-semibold text-white">{weatherData.wind_mph} mph</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
