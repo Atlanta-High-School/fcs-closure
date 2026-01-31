@@ -1,6 +1,11 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY || 're_Uohdy5M4_5gwVHXF2j4AURNrwBz9Jszax');
+const resendApiKey = process.env.RESEND_API_KEY;
+if (!resendApiKey) {
+  throw new Error('Missing required environment variable: RESEND_API_KEY');
+}
+
+const resend = new Resend(resendApiKey);
 
 // Email configuration
 const FROM_EMAIL = 'forsyth@ahscampus.com';

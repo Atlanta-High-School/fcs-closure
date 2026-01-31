@@ -1,7 +1,11 @@
 // Test ReSend email system
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY || 're_Uohdy5M4_5gwVHXF2j4AURNrwBz9Jszax');
+if (!process.env.RESEND_API_KEY) {
+  throw new Error('Missing required environment variable: RESEND_API_KEY');
+}
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const FROM_EMAIL = 'forsyth@ahscampus.com';
 const TO_EMAIL = 'jgwatson29@gmail.com';

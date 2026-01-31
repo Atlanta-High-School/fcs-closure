@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const APP_ID = '710949215288618';
-const APP_SECRET = 'f40a24a71b8aac42288955753d90fbd5';
-const APP_TOKEN = '710949215288618|-g7vhONpNNkkW9IA04kLRJUxRmM';
-
 // Hardcoded Facebook posts for Forsyth County Schools (FCSchools)
 const hardcodedPosts = [
   {

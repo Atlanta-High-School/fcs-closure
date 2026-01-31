@@ -31,8 +31,8 @@ const REQUIRED_VARS: (keyof EnvConfig)[] = [
 // Optional environment variables with defaults
 const OPTIONAL_VARS: Partial<EnvConfig> = {
   maxResponseSize: '1000000',
-  baseUrl: process.env.NODE_ENV === 'production' 
-    ? 'https://your-domain.com' 
+  baseUrl: process.env.NODE_ENV === 'production'
+    ? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '')
     : 'http://localhost:3000',
   fromEmail: 'noreply@fcs-status.com'
 };
@@ -43,16 +43,26 @@ export function validateEnv(): EnvConfig {
   
   // Check required variables
   for (const varName of REQUIRED_VARS) {
-    const value = process.env[varName.toUpperCase()];
+    const envKey =
+      varName === 'weatherApiKey' ? 'WEATHER_KEY' :
+      varName === 'resendApiKey' ? 'RESEND_API_KEY' :
+      varName === 'nodeEnv' ? 'NODE_ENV' :
+      varName.toUpperCase();
+    const value = process.env[envKey];
     if (!value) {
-      throw new Error(`Missing required environment variable: ${varName.toUpperCase()}`);
+      throw new Error(`Missing required environment variable: ${envKey}`);
     }
     (config as Record<string, string>)[varName] = value;
   }
   
   // Add optional variables with defaults
   for (const [key, defaultValue] of Object.entries(OPTIONAL_VARS)) {
-    const envValue = process.env[key.toUpperCase()];
+    const envKey =
+      key === 'baseUrl' ? 'BASE_URL' :
+      key === 'maxResponseSize' ? 'MAX_RESPONSE_SIZE' :
+      key === 'fromEmail' ? 'FROM_EMAIL' :
+      key.toUpperCase();
+    const envValue = process.env[envKey];
     (config as Record<string, string>)[key] = envValue || defaultValue;
   }
   
@@ -63,7 +73,14 @@ export function validateEnv(): EnvConfig {
   ];
   
   for (const varName of optionalEnvVars) {
-    const envValue = process.env[varName.toUpperCase()];
+    const envKey =
+      varName === 'vonageApiKey' ? 'VONAGE_API_KEY' :
+      varName === 'vonageApiSecret' ? 'VONAGE_API_SECRET' :
+      varName === 'notificationEmail' ? 'NOTIFICATION_EMAIL' :
+      varName === 'notificationPhone' ? 'NOTIFICATION_PHONE' :
+      varName === 'fromNumber' ? 'FROM_NUMBER' :
+      varName.toUpperCase();
+    const envValue = process.env[envKey];
     if (envValue) {
       (config as Record<string, string>)[varName] = envValue;
     }
