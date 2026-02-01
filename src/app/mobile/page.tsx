@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckCircle, Sun, Cloud, CloudRain, Wind, Droplets, Clock, MapPin, Smartphone, Bell, BellOff, Mail, BellRing, MessageCircle, Heart, Share2, ExternalLink, Eye, Gauge, Thermometer, CloudSnow, Zap } from 'lucide-react';
+import { CheckCircle, Sun, Cloud, CloudRain, Wind, Droplets, Clock, MapPin, Smartphone, Bell, BellOff, Mail, BellRing, MessageCircle, Heart, Share2, ExternalLink, Eye, Gauge, Thermometer, CloudSnow, Zap, RefreshCw, Activity, AlertTriangle } from 'lucide-react';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { 
   requestNotificationPermission, 
@@ -89,6 +89,7 @@ export default function MobilePage() {
   const [countdown, setCountdown] = useState(30);
   const [emailEnabled, setEmailEnabled] = useState(true);
   const [notificationEnabled, setNotificationEnabled] = useState(true);
+  const [discordEnabled, setDiscordEnabled] = useState(true);
   const [lastKnownStatus, setLastKnownStatus] = useState<string>('');
   const [deviceInfo, setDeviceInfo] = useState(getDeviceInfo());
   const [showAutoRefresh, setShowAutoRefresh] = useState(!isMobileDevice());
@@ -104,6 +105,33 @@ export default function MobilePage() {
       setWeatherIcon(Sun);
     }
   }, [weatherData]);
+
+  // Send Discord notification for status changes
+  const sendDiscordAlert = useCallback(async (message: string, title: string = "FCS Status Update") => {
+    if (!discordEnabled) return;
+    
+    try {
+      const response = await fetch('/api/discord-webhook', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          message, 
+          title,
+          priority: 'high'
+        }),
+      });
+      
+      if (response.ok) {
+        console.log('✅ Discord alert sent successfully');
+      } else {
+        console.log('❌ Discord alert failed');
+      }
+    } catch (error) {
+      console.error('Error sending Discord alert:', error);
+    }
+  }, [discordEnabled]);
 
   // Send email notification for status changes
   const sendEmailAlert = useCallback(async (message: string) => {
@@ -175,7 +203,8 @@ export default function MobilePage() {
         setLastKnownStatus(prevStatus => {
           // Only send alerts if status actually changed and it's not the default message
           if (currentStatus !== prevStatus && currentStatus !== 'No changes detected for Monday, February 2nd') {
-            // Send email and desktop alerts
+            // Send Discord, email, and desktop alerts
+            sendDiscordAlert(currentStatus, "School Status Change");
             sendEmailAlert(currentStatus);
             sendDesktopNotification(currentStatus);
           }
@@ -199,7 +228,7 @@ export default function MobilePage() {
     } finally {
       setLoading(false);
     }
-  }, [sendEmailAlert, sendDesktopNotification]);
+  }, [sendDiscordAlert, sendEmailAlert, sendDesktopNotification]);
 
   // Initial fetch
   useEffect(() => {
@@ -603,6 +632,22 @@ export default function MobilePage() {
                   <div className="text-xs text-cyan-400 font-mono">
                     {countdown}s
                   </div>
+                </div>
+                
+                {/* Discord Toggle */}
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-300">Discord @everyone</span>
+                  <button
+                    onClick={() => setDiscordEnabled(!discordEnabled)}
+                    className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-all ${
+                      discordEnabled 
+                        ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' 
+                        : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
+                    }`}
+                  >
+                    <MessageCircle className="w-2 h-2" />
+                    {discordEnabled ? 'ON' : 'OFF'}
+                  </button>
                 </div>
                 
                 {/* Email Toggle */}
