@@ -87,7 +87,6 @@ export default function MobilePage() {
   const [loading, setLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [countdown, setCountdown] = useState(30);
-  const [smsEnabled, setSmsEnabled] = useState(true);
   const [emailEnabled, setEmailEnabled] = useState(true);
   const [notificationEnabled, setNotificationEnabled] = useState(true);
   const [lastKnownStatus, setLastKnownStatus] = useState<string>('');
@@ -105,29 +104,6 @@ export default function MobilePage() {
       setWeatherIcon(Sun);
     }
   }, [weatherData]);
-
-  // Send SMS notification for status changes
-  const sendSMSAlert = useCallback(async (message: string) => {
-    if (!smsEnabled) return;
-    
-    try {
-      const response = await fetch('/api/sms-alert', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ message }),
-      });
-      
-      if (response.ok) {
-        console.log('✅ SMS alert sent successfully via Twilio');
-      } else {
-        console.log('❌ SMS alert failed');
-      }
-    } catch (error) {
-      console.error('Error sending SMS alert:', error);
-    }
-  }, [smsEnabled]);
 
   // Send email notification for status changes
   const sendEmailAlert = useCallback(async (message: string) => {
@@ -199,8 +175,7 @@ export default function MobilePage() {
         setLastKnownStatus(prevStatus => {
           // Only send alerts if status actually changed and it's not the default message
           if (currentStatus !== prevStatus && currentStatus !== 'No changes detected for Monday, February 2nd') {
-            // Send SMS, email, and desktop alerts
-            sendSMSAlert(currentStatus);
+            // Send email and desktop alerts
             sendEmailAlert(currentStatus);
             sendDesktopNotification(currentStatus);
           }
@@ -224,7 +199,7 @@ export default function MobilePage() {
     } finally {
       setLoading(false);
     }
-  }, [sendSMSAlert, sendEmailAlert, sendDesktopNotification]);
+  }, [sendEmailAlert, sendDesktopNotification]);
 
   // Initial fetch
   useEffect(() => {
@@ -628,22 +603,6 @@ export default function MobilePage() {
                   <div className="text-xs text-cyan-400 font-mono">
                     {countdown}s
                   </div>
-                </div>
-                
-                {/* SMS Toggle */}
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-300">SMS Alerts</span>
-                  <button
-                    onClick={() => setSmsEnabled(!smsEnabled)}
-                    className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-all ${
-                      smsEnabled 
-                        ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
-                        : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
-                    }`}
-                  >
-                    {smsEnabled ? <Bell className="w-2 h-2" /> : <BellOff className="w-2 h-2" />}
-                    {smsEnabled ? 'ON' : 'OFF'}
-                  </button>
                 </div>
                 
                 {/* Email Toggle */}

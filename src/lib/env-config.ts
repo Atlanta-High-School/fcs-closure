@@ -4,8 +4,6 @@ export interface EnvConfig {
   // API Keys
   weatherApiKey: string;
   resendApiKey: string;
-  vonageApiKey?: string;
-  vonageApiSecret?: string;
   
   // Notification settings
   notificationEmail?: string;
@@ -68,22 +66,17 @@ export function validateEnv(): EnvConfig {
   
   // Add other optional variables
   const optionalEnvVars: (keyof EnvConfig)[] = [
-    'vonageApiKey', 'vonageApiSecret',
     'notificationEmail', 'notificationPhone', 'fromNumber'
   ];
   
   for (const varName of optionalEnvVars) {
     const envKey =
-      varName === 'vonageApiKey' ? 'VONAGE_API_KEY' :
-      varName === 'vonageApiSecret' ? 'VONAGE_API_SECRET' :
       varName === 'notificationEmail' ? 'NOTIFICATION_EMAIL' :
       varName === 'notificationPhone' ? 'NOTIFICATION_PHONE' :
       varName === 'fromNumber' ? 'FROM_NUMBER' :
       varName.toUpperCase();
-    const envValue = process.env[envKey];
-    if (envValue) {
-      (config as Record<string, string>)[varName] = envValue;
-    }
+      
+    config[varName] = process.env[envKey] || undefined;
   }
   
   // Type assertion since we've validated all required fields
@@ -100,16 +93,14 @@ export function getEnvConfig(): EnvConfig {
 }
 
 // Check if a feature is enabled based on environment variables
-export function isFeatureEnabled(feature: 'sms' | 'email' | 'notifications'): boolean {
+export function isFeatureEnabled(feature: 'email' | 'notifications'): boolean {
   const config = getEnvConfig();
   
   switch (feature) {
-    case 'sms':
-      return !!(config.vonageApiKey && config.vonageApiSecret && config.notificationPhone);
     case 'email':
       return !!(config.resendApiKey && config.notificationEmail);
     case 'notifications':
-      return true; // Browser notifications are always available
+      return typeof window !== 'undefined' && 'Notification' in window;
     default:
       return false;
   }
@@ -118,7 +109,6 @@ export function isFeatureEnabled(feature: 'sms' | 'email' | 'notifications'): bo
 // Get feature status for UI display
 export function getFeatureStatus() {
   return {
-    sms: isFeatureEnabled('sms'),
     email: isFeatureEnabled('email'),
     notifications: isFeatureEnabled('notifications')
   };

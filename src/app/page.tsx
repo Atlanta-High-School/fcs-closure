@@ -70,7 +70,7 @@ async function fetchSchoolStatus(): Promise<SchoolStatus | null> {
 export default function Home() {
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [schoolStatus, setSchoolStatus] = useState<SchoolStatus | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   
   const currentDate = formatDate();
   const weatherIconName = weatherData ? weatherData.condition?.text || '' : '';
@@ -80,7 +80,7 @@ export default function Home() {
   useEffect(() => {
     async function loadData() {
       try {
-        setLoading(true);
+        // Don't show loading state for background updates
         const [weather, status] = await Promise.all([
           fetchWeatherData(),
           fetchSchoolStatus()
@@ -89,28 +89,16 @@ export default function Home() {
         setSchoolStatus(status);
       } catch (error) {
         console.error('Failed to load data:', error);
-      } finally {
-        setLoading(false);
       }
     }
     
+    // Initial load
     loadData();
     
-    // Auto-refresh entire page every 10 seconds
+    // Auto-refresh entire page every 10 seconds in background
     const interval = setInterval(loadData, 10 * 1000);
     return () => clearInterval(interval);
   }, []);
-  
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-400">Loading...</p>
-        </div>
-      </div>
-    );
-  }
   
   return (
     <div className="min-h-screen bg-gray-950 text-white overflow-hidden">
