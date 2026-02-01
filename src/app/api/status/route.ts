@@ -171,7 +171,7 @@ function parseDateFromAnnouncement(text: string, reference: Date): Date | null {
   return futureOrToday[0] || null;
 }
 
-function shortenAnnouncement(text: string, maxLen: number = 180): string {
+function shortenAnnouncement(text: string, maxLen: number = 120): string {
   const cleaned = text
     .replace(/\s+/g, ' ')
     .trim();
