@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckCircle, Sun, Cloud, CloudRain, Wind, Droplets, Clock, MapPin } from 'lucide-react';
+import { CheckCircle, XCircle, Sun, Cloud, CloudRain, Wind, Droplets, Clock, MapPin } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import RefreshButton from '@/components/refresh-button';
 import WeatherMonitorBox from '@/components/WeatherMonitorBox';
@@ -195,22 +195,41 @@ export default function Home() {
                 {/* Glowing border effect */}
                 <div className="absolute -inset-1 bg-gradient-to-r from-green-500/20 via-cyan-500/20 to-blue-500/20 rounded-3xl blur-xl group-hover:from-green-500/30 group-hover:via-cyan-500/30 group-hover:to-blue-500/30 transition-all duration-500" />
                 
-                <div className="relative bg-black/40 backdrop-blur-xl border border-white/10 rounded-3xl p-5 md:p-7 shadow-2xl hover:bg-black/50 transition-all duration-500 h-full">
+                <div className={`relative bg-black/40 backdrop-blur-xl border border-white/10 rounded-3xl p-5 md:p-7 shadow-2xl hover:bg-black/50 transition-all duration-500 h-full overflow-hidden ${schoolStatus?.status === 'School is Closed' ? 'bg-[linear-gradient(45deg,_rgba(239,68,68,0.1)_25%,_transparent_25%),_linear-gradient(-45deg,_rgba(239,68,68,0.1)_25%,_transparent_25%),_linear-gradient(45deg,_transparent_75%,_rgba(239,68,68,0.1)_75%),_linear-gradient(-45deg,_transparent_75%,_rgba(239,68,68,0.1)_75%)] bg-[length:20px_20px]' : ''}`}>
                   {/* Inner glow */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 via-transparent to-cyan-500/5 rounded-3xl" />
+                  {schoolStatus?.status === 'School is Closed' ? (
+                    <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 via-transparent to-rose-500/5 rounded-3xl" />
+                  ) : (
+                    <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 via-transparent to-cyan-500/5 rounded-3xl" />
+                  )}
                   
                   <div className="relative h-full flex flex-col items-center justify-center text-center">
-                    {/* Glowing checkmark */}
+                    {/* Status Icon */}
                     <div className="mb-4 relative">
-                      <div className="absolute inset-0 bg-green-500/30 rounded-full blur-2xl animate-pulse" />
-                      <CheckCircle className="relative w-16 h-16 md:w-24 md:h-24 text-green-400 drop-shadow-[0_0_40px_rgba(52,211,153,0.8)]" />
+                      {schoolStatus?.status === 'School is Closed' ? (
+                        <>
+                          <div className="absolute inset-0 bg-red-500/30 rounded-full blur-2xl animate-pulse" />
+                          <XCircle className="relative w-16 h-16 md:w-24 md:h-24 text-red-400 drop-shadow-[0_0_40px_rgba(239,68,68,0.8)]" />
+                        </>
+                      ) : (
+                        <>
+                          <div className="absolute inset-0 bg-green-500/30 rounded-full blur-2xl animate-pulse" />
+                          <CheckCircle className="relative w-16 h-16 md:w-24 md:h-24 text-green-400 drop-shadow-[0_0_40px_rgba(52,211,153,0.8)]" />
+                        </>
+                      )}
                     </div>
                     
                     {/* Bold status text */}
                     <h2 className="text-2xl md:text-3xl lg:text-4xl font-black mb-4 tracking-tight">
-                      <span className="bg-gradient-to-r from-green-400 via-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-                        SCHOOL IS ON SCHEDULE
-                      </span>
+                      {schoolStatus?.status === 'School is Closed' ? (
+                        <span className="bg-gradient-to-r from-red-400 via-rose-400 to-pink-400 bg-clip-text text-transparent">
+                          SCHOOL IS CLOSED
+                        </span>
+                      ) : (
+                        <span className="bg-gradient-to-r from-green-400 via-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+                          SCHOOL IS ON SCHEDULE
+                        </span>
+                      )}
                     </h2>
                     
                     <p className="text-base md:text-lg text-gray-300 mb-5 font-light tracking-wide">
