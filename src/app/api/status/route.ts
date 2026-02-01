@@ -7,7 +7,7 @@ const SECURITY_HEADERS = {
   'X-Frame-Options': 'DENY',
   'X-XSS-Protection': '1; mode=block',
   'Referrer-Policy': 'strict-origin-when-cross-origin',
-  'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';",
+  'Content-Security-Policy': "default-src 'self' https://schoolcancelled.today; script-src 'self' https://schoolcancelled.today 'unsafe-inline'; style-src 'self' https://schoolcancelled.today 'unsafe-inline';",
 };
 
 const FCS_URL = 'https://www.forsyth.k12.ga.us/fs/pages/0/page-pops';
@@ -171,7 +171,7 @@ function parseDateFromAnnouncement(text: string, reference: Date): Date | null {
   return futureOrToday[0] || null;
 }
 
-function shortenAnnouncement(text: string, maxLen: number = 240): string {
+function shortenAnnouncement(text: string, maxLen: number = 180): string {
   const cleaned = text
     .replace(/\s+/g, ' ')
     .trim();

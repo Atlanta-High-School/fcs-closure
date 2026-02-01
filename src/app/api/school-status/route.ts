@@ -6,7 +6,7 @@ const SECURITY_HEADERS = {
   'X-Frame-Options': 'DENY',
   'X-XSS-Protection': '1; mode=block',
   'Referrer-Policy': 'strict-origin-when-cross-origin',
-  'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';",
+  'Content-Security-Policy': "default-src 'self' https://schoolcancelled.today; script-src 'self' https://schoolcancelled.today 'unsafe-inline'; style-src 'self' https://schoolcancelled.today 'unsafe-inline';",
 };
 
 // Rate limiting (in production, use Redis or a database)

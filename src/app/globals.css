@@ -43,7 +43,7 @@ button, a, input, textarea, select {
   zoom: 1.0;
 }
 
-/* Content Security Policy to allow eval and weatherapi.com */
+/* Content Security Policy to allow eval, weatherapi.com, and schoolcancelled.today */
 meta[http-equiv="Content-Security-Policy"] {
-  content: "default-src *; script-src * 'unsafe-eval' 'unsafe-inline'; style-src * 'unsafe-inline'; connect-src *; img-src * data:; font-src *;";
+  content: "default-src 'self' https://schoolcancelled.today; script-src 'self' https://schoolcancelled.today 'unsafe-eval' 'unsafe-inline'; style-src 'self' https://schoolcancelled.today 'unsafe-inline'; connect-src 'self' https://schoolcancelled.today; img-src 'self' https://schoolcancelled.today data:; font-src 'self' https://schoolcancelled.today;";
 }

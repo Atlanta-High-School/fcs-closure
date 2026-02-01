@@ -48,7 +48,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <meta httpEquiv="Content-Security-Policy" content="default-src *; script-src * 'unsafe-eval' 'unsafe-inline'; style-src * 'unsafe-inline'; connect-src *; img-src * data:; font-src *;" />
+        <meta httpEquiv="Content-Security-Policy" content="default-src 'self' https://schoolcancelled.today; script-src 'self' https://schoolcancelled.today 'unsafe-eval' 'unsafe-inline'; style-src 'self' https://schoolcancelled.today 'unsafe-inline'; connect-src 'self' https://schoolcancelled.today; img-src 'self' https://schoolcancelled.today data:; font-src 'self' https://schoolcancelled.today;" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
