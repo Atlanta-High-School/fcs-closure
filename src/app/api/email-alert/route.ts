@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sendResendEmail } from '@/lib/resend-service';
+import { sendOneSignalEmailMessage } from '@/lib/onesignal-service';
 
 // Security headers
 const SECURITY_HEADERS = {
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await sendResendEmail(message, weatherData);
+    const result = await sendOneSignalEmailMessage(message, weatherData);
     
     if (result) {
       return NextResponse.json(

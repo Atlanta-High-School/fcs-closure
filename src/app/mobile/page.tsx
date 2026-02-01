@@ -69,29 +69,15 @@ interface SchoolStatus {
   announcement?: string;
 }
 
-// Facebook post interface
-interface FacebookPost {
-  id: string;
-  message: string;
-  created_time: string;
-  full_picture: string;
-  permalink_url: string;
-  likes_count: number;
-  comments_count: number;
-  shares_count: number;
-}
-
 
 export default function MobilePage() {
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [schoolStatus, setSchoolStatus] = useState<SchoolStatus | null>(null);
-  const [facebookPosts, setFacebookPosts] = useState<FacebookPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [countdown, setCountdown] = useState(30);
   const [emailEnabled, setEmailEnabled] = useState(true);
   const [notificationEnabled, setNotificationEnabled] = useState(true);
-  const [discordEnabled, setDiscordEnabled] = useState(true);
   const [lastKnownStatus, setLastKnownStatus] = useState<string>('');
   const [deviceInfo, setDeviceInfo] = useState(getDeviceInfo());
   const [showAutoRefresh, setShowAutoRefresh] = useState(!isMobileDevice());
@@ -108,32 +94,6 @@ export default function MobilePage() {
     }
   }, [weatherData]);
 
-  // Send Discord notification for status changes
-  const sendDiscordAlert = useCallback(async (message: string, title: string = "FCS Status Update") => {
-    if (!discordEnabled) return;
-    
-    try {
-      const response = await fetch('/api/discord-webhook', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          message, 
-          title,
-          priority: 'high'
-        }),
-      });
-      
-      if (response.ok) {
-        console.log('✅ Discord alert sent successfully');
-      } else {
-        console.log('❌ Discord alert failed');
-      }
-    } catch (error) {
-      console.error('Error sending Discord alert:', error);
-    }
-  }, [discordEnabled]);
 
   // Send email notification for status changes
   const sendEmailAlert = useCallback(async (message: string) => {
@@ -205,8 +165,7 @@ export default function MobilePage() {
         setLastKnownStatus(prevStatus => {
           // Only send alerts if status actually changed and it's an active alert
           if (schoolJson.isOpen === false && currentStatus !== prevStatus) {
-            // Send Discord, email, and desktop alerts
-            sendDiscordAlert(currentStatus, "School Status Change");
+            // Send email and desktop alerts
             sendEmailAlert(currentStatus);
             sendDesktopNotification(currentStatus);
           }
@@ -214,14 +173,6 @@ export default function MobilePage() {
         });
       }
 
-      // Fetch Facebook posts
-      const facebookResponse = await fetch('/api/facebook-posts');
-      if (facebookResponse.ok) {
-        const facebookJson = await facebookResponse.json();
-        if (facebookJson.success && facebookJson.data) {
-          setFacebookPosts(facebookJson.data);
-        }
-      }
       
       setLastRefresh(new Date());
       setCountdown(30);
@@ -230,7 +181,7 @@ export default function MobilePage() {
     } finally {
       setLoading(false);
     }
-  }, [sendDiscordAlert, sendEmailAlert, sendDesktopNotification]);
+  }, [sendEmailAlert, sendDesktopNotification]);
 
   // Initial fetch
   useEffect(() => {
@@ -543,101 +494,6 @@ export default function MobilePage() {
               </div>
             </div>
 
-            {/* Facebook Posts Card */}
-            <div className="h-full">
-              <div className="relative group h-full">
-                {/* Glowing border */}
-                <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 rounded-xl blur-lg group-hover:from-blue-500/30 group-hover:via-purple-500/30 group-hover:to-pink-500/30 transition-all duration-500" />
-                
-                <div className={`relative bg-black/40 backdrop-blur-xl border border-white/10 rounded-xl ${isMobile ? 'p-2' : 'p-3'} shadow-2xl h-full`}>
-                  {/* Inner glow */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-purple-500/5 rounded-xl" />
-                  
-                  <div className="relative h-full flex flex-col">
-                    <h3 className={`${isMobile ? 'text-xs' : 'text-sm'} font-bold mb-2 text-white flex items-center ${isMobile ? 'gap-1' : 'gap-2'} tracking-wide`}>
-                      <div className="relative">
-                        <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-xl" />
-                        <div className={`relative ${isMobile ? 'w-2 h-2' : 'w-3 h-3'} bg-blue-600 rounded-full flex items-center justify-center`}>
-                          <span className={`${isMobile ? 'text-xs' : 'text-xs'} font-bold text-white`}>f</span>
-                        </div>
-                      </div>
-                      Facebook Updates
-                    </h3>
-                    
-                    {facebookPosts.length > 0 ? (
-                      <div className="space-y-2 flex-1 overflow-y-auto">
-                        {facebookPosts.map((post) => (
-                          <div key={post.id} className="bg-white/5 rounded-lg p-2 border border-white/10 hover:bg-white/10 transition-all duration-300">
-                            {/* Post image */}
-                            {post.full_picture && (
-                              <div className="mb-2 rounded overflow-hidden">
-                                <img 
-                                  src={post.full_picture} 
-                                  alt="Facebook post" 
-                                  className="w-full h-16 object-cover"
-                                  onError={(e) => {
-                                    e.currentTarget.style.display = 'none';
-                                  }}
-                                />
-                              </div>
-                            )}
-                            
-                            {/* Post message */}
-                            <p className={`${isMobile ? 'text-xs' : 'text-xs'} text-gray-200 mb-1 line-clamp-3`}>
-                              {post.message}
-                            </p>
-                            
-                            {/* Post engagement */}
-                            <div className="flex items-center justify-between text-xs text-gray-400 mb-1">
-                              <div className="flex items-center gap-3">
-                                <div className="flex items-center gap-1">
-                                  <Heart className="w-3 h-3" />
-                                  <span>{post.likes_count}</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <MessageCircle className="w-3 h-3" />
-                                  <span>{post.comments_count}</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <Share2 className="w-3 h-3" />
-                                  <span>{post.shares_count}</span>
-                                </div>
-                              </div>
-                            </div>
-                            
-                            {/* View on Facebook link */}
-                            <a 
-                              href={post.permalink_url} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition-colors"
-                            >
-                              <ExternalLink className="w-3 h-3" />
-                              View on Facebook
-                            </a>
-                            
-                            {/* Post time */}
-                            <div className="mt-2 text-xs text-gray-500">
-                              {new Date(post.created_time).toLocaleDateString()} at {new Date(post.created_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-6 flex-1 flex items-center justify-center">
-                        <div className="relative">
-                          <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-xl" />
-                          <div className={`relative ${isMobile ? 'w-8 h-8' : 'w-12 h-12'} bg-blue-600 rounded-full flex items-center justify-center`}>
-                            <span className={`${isMobile ? 'text-sm' : 'text-lg'} font-bold text-white`}>f</span>
-                          </div>
-                        </div>
-                        <p className={`${isMobile ? 'text-sm' : 'text-base'} text-gray-400 mt-2`}>Loading Facebook posts...</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
           </div>
 
@@ -653,22 +509,6 @@ export default function MobilePage() {
                   <div className="text-xs text-cyan-400 font-mono">
                     {countdown}s
                   </div>
-                </div>
-                
-                {/* Discord Toggle */}
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-300">Discord @everyone</span>
-                  <button
-                    onClick={() => setDiscordEnabled(!discordEnabled)}
-                    className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-all ${
-                      discordEnabled 
-                        ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' 
-                        : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
-                    }`}
-                  >
-                    <MessageCircle className="w-2 h-2" />
-                    {discordEnabled ? 'ON' : 'OFF'}
-                  </button>
                 </div>
                 
                 {/* Email Toggle */}

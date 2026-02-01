@@ -22,6 +22,7 @@ export default function WeatherMonitorBox({ compact = false, className = "" }: W
     isMonitoring: false,
     lastCheck: 'Never'
   });
+  const [lastNotifiedStatus, setLastNotifiedStatus] = useState<string>('');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const extractTimestamp = (status: string): string => {
@@ -45,12 +46,23 @@ export default function WeatherMonitorBox({ compact = false, className = "" }: W
       
       if (data.success) {
         const now = new Date();
+        const newStatus = data.status;
+        
         setWeatherStatus({
-          status: data.status,
+          status: newStatus,
           lastUpdated: now.toISOString(),
           isMonitoring: true,
           lastCheck: now.toLocaleString()
         });
+
+        // Check if status has changed and notify subscribers
+        if (lastNotifiedStatus && newStatus !== lastNotifiedStatus && newStatus !== 'Loading...') {
+          await notifySubscribers(newStatus);
+          setLastNotifiedStatus(newStatus);
+        } else if (!lastNotifiedStatus && newStatus !== 'Loading...') {
+          // Set initial status on first load
+          setLastNotifiedStatus(newStatus);
+        }
       } else {
         throw new Error(data.message || 'Failed to fetch status');
       }
@@ -65,13 +77,42 @@ export default function WeatherMonitorBox({ compact = false, className = "" }: W
     }
   };
 
+  // Notify subscribers of status change
+  const notifySubscribers = async (status: string) => {
+    try {
+      // Also fetch current weather data to include in notification
+      const weatherResponse = await fetch('/api/weather');
+      let weatherData = null;
+      if (weatherResponse.ok) {
+        weatherData = await weatherResponse.json();
+      }
+
+      await fetch('/api/notify-subscribers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: status,
+          subject: '🚨 FCS Weather Status Update',
+          weatherData,
+          priority: 'high'
+        }),
+      });
+
+      console.log('✅ Notifications sent to subscribers');
+    } catch (error) {
+      console.error('❌ Failed to notify subscribers:', error);
+    }
+  };
+
   useEffect(() => {
     fetchWeatherStatus();
     
     // Auto-refresh every 10 seconds
     const interval = setInterval(fetchWeatherStatus, 10 * 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [lastNotifiedStatus]);
 
   const timestamp = extractTimestamp(weatherStatus.status);
 

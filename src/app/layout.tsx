@@ -13,11 +13,42 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FCS School Status Checker",
-  description: "Real-time school status monitoring for Forsyth County Schools - Monday, February 2nd",
+  title: "FCS School Status Checker - Real-time Forsyth County Schools Weather Monitoring",
+  description: "Get instant updates on Forsyth County Schools weather closures and delays. Real-time monitoring for Monday, February 2nd and beyond. Stay informed with automated alerts.",
+  keywords: "Forsyth County Schools, FCS, school closures, weather delays, school status, Georgia schools, weather monitoring, schoolcancelled.today",
+  authors: [{ name: "FCS Status Monitor" }],
+  creator: "FCS Status Monitor",
+  publisher: "FCS Status Monitor",
   metadataBase: new URL('https://schoolcancelled.today'),
   openGraph: {
     url: 'https://schoolcancelled.today',
+    title: "FCS School Status Checker - Real-time Weather Monitoring",
+    description: "Get instant updates on Forsyth County Schools weather closures and delays. Real-time monitoring with automated alerts.",
+    siteName: "FCS Status Monitor",
+    images: [
+      {
+        url: 'https://gray-whns-prod.gtv-cdn.com/resizer/v2/MUX6K43VUJG75OOLXOZ7BADLOE.png?auth=4217767f9fe03582cc6971c89614aa572c3811cd15ed67345139411cb62bf124&width=1200&height=600&smart=true',
+        width: 1200,
+        height: 600,
+        alt: 'Forsyth County Schools Weather Status Monitor',
+      },
+      {
+        url: '/logo.webp',
+        width: 400,
+        height: 400,
+        alt: 'Forsyth County Schools Logo',
+      }
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: "FCS School Status Checker - Real-time Weather Monitoring",
+    description: "Get instant updates on Forsyth County Schools weather closures and delays. Real-time monitoring with automated alerts.",
+    images: ['https://gray-whns-prod.gtv-cdn.com/resizer/v2/MUX6K43VUJG75OOLXOZ7BADLOE.png?auth=4217767f9fe03582cc6971c89614aa572c3811cd15ed67345139411cb62bf124&width=1200&height=600&smart=true'],
+    creator: '@FCSSchools',
+    site: '@schoolcancelled',
   },
   icons: {
     icon: '/logo.webp',
@@ -29,6 +60,20 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: 'black-translucent',
     title: 'FCS Status',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  verification: {
+    google: 'your-google-verification-code',
   },
 };
 

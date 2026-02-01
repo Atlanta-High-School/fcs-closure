@@ -4,9 +4,9 @@ import { CheckCircle, XCircle, Sun, Cloud, CloudRain, Wind, Droplets, Clock, Map
 import { useEffect, useState } from 'react';
 import RefreshButton from '@/components/refresh-button';
 import WeatherMonitorBox from '@/components/WeatherMonitorBox';
+import NotificationSignup from '@/components/NotificationSignup';
 import { formatDate } from '@/lib/date-utils';
 import { getWeatherIcon } from '@/lib/weather-utils';
-import { discordWebhook } from '@/lib/discord-webhook';
 
 // Weather data interface
 interface WeatherData {
@@ -79,31 +79,6 @@ export default function Home() {
   const currentDate = formatDate();
   const weatherIconName = weatherData ? weatherData.condition?.text || '' : '';
   const WeatherIcon = weatherIconName ? getWeatherIcon(weatherIconName) : Sun;
-
-  // Send Discord alert for status changes
-  const sendDiscordAlert = async (message: string, title: string = "FCS Status Update") => {
-    try {
-      const response = await fetch('/api/discord-webhook', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          message, 
-          title,
-          priority: 'high'
-        }),
-      });
-      
-      if (response.ok) {
-        console.log('✅ Discord alert sent successfully');
-      } else {
-        console.log('❌ Discord alert failed');
-      }
-    } catch (error) {
-      console.error('Error sending Discord alert:', error);
-    }
-  };
   
   // Fetch data on mount
   useEffect(() => {
@@ -117,12 +92,12 @@ export default function Home() {
         setWeatherData(weather);
         setSchoolStatus(status);
         
-        // Check for status changes and send Discord alert
+        // Check for status changes
         if (status && status.message && status.isOpen === false) {
           const currentStatus = status.message;
           setLastKnownStatus(prevStatus => {
             if (currentStatus !== prevStatus) {
-              sendDiscordAlert(currentStatus, "School Status Change");
+              console.log('🚨 School status changed:', currentStatus);
             }
             return currentStatus;
           });
@@ -313,6 +288,11 @@ export default function Home() {
           {/* FCS Weather Monitor Box */}
           <div className="mt-6">
             <WeatherMonitorBox compact />
+          </div>
+          
+          {/* Notification Signup */}
+          <div className="mt-6">
+            <NotificationSignup />
           </div>
         </main>
       </div>

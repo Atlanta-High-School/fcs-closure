@@ -1,6 +1,4 @@
-import { Resend } from 'resend';
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+import { sendOneSignalEmail } from './onesignal-service';
 
 export interface WeatherNotificationData {
   status: string;
@@ -35,11 +33,13 @@ export class WeatherNotificationService {
       const emailContent = this.generateEmailContent(data);
       
       for (const recipient of this.recipients) {
-        await resend.emails.send({
-          from: 'Forsyth Schools Weather Monitor <weather@forsythschools.org>',
-          to: [recipient],
-          subject: `🚨 Forsyth County Schools Weather Update - ${data.timestamp.toLocaleString()}`,
-          html: emailContent,
+        await sendOneSignalEmail({
+          app_id: process.env.ONESIGNAL_APP_ID!,
+          email_subject: `🚨 Forsyth County Schools Weather Update - ${data.timestamp.toLocaleString()}`,
+          email_body: emailContent,
+          email_to: [recipient],
+          email_from_name: 'Forsyth Schools Weather Monitor',
+          email_from_address: 'weather@forsythschools.org',
         });
         
         console.log(`Weather update sent to: ${recipient}`);
