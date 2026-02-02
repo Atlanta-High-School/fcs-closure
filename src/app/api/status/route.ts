@@ -1,14 +1,6 @@
-import { NextResponse } from 'next/server';
-import { logError, createErrorResponse, safeFetch } from '@/lib/error-handling';
-
-// Security headers
-const SECURITY_HEADERS = {
-  'X-Content-Type-Options': 'nosniff',
-  'X-Frame-Options': 'DENY',
-  'X-XSS-Protection': '1; mode=block',
-  'Referrer-Policy': 'strict-origin-when-cross-origin',
-  'Content-Security-Policy': "default-src 'self' https://schoolcancelled.today; script-src 'self' https://schoolcancelled.today 'unsafe-inline'; style-src 'self' https://schoolcancelled.today 'unsafe-inline';",
-};
+import { NextResponse, NextRequest } from 'next/server';
+import { logError, safeFetch } from '@/lib/error-handling';
+import { SECURITY_HEADERS, getClientIdentifier, checkRateLimit, validateRequest, createSecureResponse, createErrorResponse as createSecureErrorResponse } from '@/lib/security';
 
 const FCS_URL = 'https://www.forsyth.k12.ga.us/fs/pages/0/page-pops';
 
@@ -184,19 +176,32 @@ function shortenAnnouncement(text: string, maxLen: number = 120): string {
   return `${cleaned.slice(0, cutoff).trim()}…`;
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const startTime = Date.now();
   const now = Date.now();
   
+  // Validate request
+  const validation = validateRequest(request);
+  if (!validation.valid) {
+    return createSecureErrorResponse(validation.error!, 400);
+  }
+
+  // Rate limiting
+  const clientId = getClientIdentifier(request);
+  if (!checkRateLimit(clientId, 'status')) {
+    return createSecureErrorResponse(
+      'Rate limit exceeded. Please try again later.',
+      429,
+      { 'Retry-After': '60' }
+    );
+  }
+  
   // Return cached response if it's still fresh
   if (cachedResponse && (now - lastFetchTime) < CACHE_DURATION) {
-    return NextResponse.json({ ...cachedResponse, cached: true }, {
-      headers: {
-        ...SECURITY_HEADERS,
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-      }
+    return createSecureResponse({ ...cachedResponse, cached: true }, 200, {
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
     });
   }
 
@@ -256,44 +261,30 @@ export async function GET() {
     // Cache the result
     cachedResponse = result;
     lastFetchTime = Date.now();
-    return NextResponse.json(result, {
-      headers: {
-        ...SECURITY_HEADERS,
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-      }
+    return createSecureResponse(result, 200, {
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
     });
   } catch (error) {
     logError('School Status API', error, { url: FCS_URL, processingTime: Date.now() - startTime });
 
     const processingTime = Date.now() - startTime;
-    const errorResponse = createErrorResponse(
-      'Service temporarily unavailable. Please try again later.',
-      503,
-      { processingTime: `${processingTime}ms` }
-    );
-
-    return NextResponse.json(
-      {
-        isOpen: false,
-        status: 'Status Unavailable',
-        message: errorResponse.message,
-        announcement: '',
-        error: errorResponse.message,
-        processingTime: `${processingTime}ms`,
-        timestamp: errorResponse.timestamp,
-        verified: false
-      },
-      {
-        status: errorResponse.status || 503,
-        headers: {
-          ...SECURITY_HEADERS,
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0',
-        }
-      }
-    );
+    const errorMessage = 'Service temporarily unavailable. Please try again later.';
+    
+    return createSecureResponse({
+      isOpen: false,
+      status: 'Status Unavailable',
+      message: errorMessage,
+      announcement: '',
+      error: errorMessage,
+      processingTime: `${processingTime}ms`,
+      timestamp: new Date().toISOString(),
+      verified: false
+    }, 503, {
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+    });
   }
 }

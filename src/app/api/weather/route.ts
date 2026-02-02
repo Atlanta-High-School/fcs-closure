@@ -1,27 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-// Security headers
-const SECURITY_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': '*',
-  'Access-Control-Max-Age': '86400',
-};
+import { SECURITY_HEADERS, getClientIdentifier, checkRateLimit, validateRequest, createSecureResponse, createErrorResponse } from '@/lib/security';
 
 export async function GET(request: NextRequest) {
   console.log('🌤️ Weather API: Request received');
   
   try {
+    // Validate request
+    const validation = validateRequest(request);
+    if (!validation.valid) {
+      return createErrorResponse(validation.error!, 400);
+    }
+
+    // Rate limiting
+    const clientId = getClientIdentifier(request);
+    if (!checkRateLimit(clientId, 'weather')) {
+      return createErrorResponse(
+        'Rate limit exceeded. Please try again later.',
+        429,
+        { 'Retry-After': '60' }
+      );
+    }
     // Use hardcoded key in production, fallback to env var for local dev
     const weatherApiKey = process.env.WEATHER_KEY || 'b15c56de27784749aac160754263101';
     console.log('🔑 Weather API: Using key (first 8 chars)', weatherApiKey?.substring(0, 8) + '...');
     
     if (!weatherApiKey) {
       console.error('❌ Weather API: WEATHER_KEY not configured');
-      return NextResponse.json(
-        { error: 'Weather API key not configured' },
-        { status: 500, headers: SECURITY_HEADERS }
-      );
+      return createErrorResponse('Weather API key not configured', 500);
     }
 
     console.log('🔑 Weather API: Key found, fetching from WeatherAPI.com');
@@ -41,9 +46,10 @@ export async function GET(request: NextRequest) {
         statusText: weatherResponse.statusText,
         bodyPreview: errorText.slice(0, 500),
       });
-      return NextResponse.json(
-        { error: 'Weather data unavailable', details: errorText.slice(0, 200) },
-        { status: 502, headers: SECURITY_HEADERS }
+      return createErrorResponse(
+        'Weather data unavailable',
+        502,
+        { details: errorText.slice(0, 200) }
       );
     }
 
@@ -56,21 +62,15 @@ export async function GET(request: NextRequest) {
       humidity: weatherData.current?.humidity,
     });
     
-    return NextResponse.json(weatherData, {
-      headers: {
-        ...SECURITY_HEADERS,
-        'Cache-Control': 'public, max-age=300', // Cache for 5 minutes
-      }
+    return createSecureResponse(weatherData, 200, {
+      'Cache-Control': 'public, max-age=300', // Cache for 5 minutes
     });
     
   } catch (error) {
     console.error('💥 Weather API: Unexpected error', error);
-    return NextResponse.json(
-      { 
-        error: 'Internal server error',
-        timestamp: new Date().toISOString()
-      },
-      { status: 500, headers: SECURITY_HEADERS }
+    return createErrorResponse(
+      'Internal server error',
+      500
     );
   }
 }

@@ -1,59 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-// Security headers
-const SECURITY_HEADERS = {
-  'X-Content-Type-Options': 'nosniff',
-  'X-Frame-Options': 'DENY',
-  'X-XSS-Protection': '1; mode=block',
-  'Referrer-Policy': 'strict-origin-when-cross-origin',
-  'Content-Security-Policy': "default-src 'self' https://schoolcancelled.today; script-src 'self' https://schoolcancelled.today 'unsafe-inline'; style-src 'self' https://schoolcancelled.today 'unsafe-inline';",
-};
-
-// Rate limiting (in production, use Redis or a database)
-const RATE_LIMIT = new Map<string, { count: number; resetTime: number }>();
-const RATE_LIMIT_WINDOW = 60000; // 1 minute
-const RATE_LIMIT_MAX_REQUESTS = 100; // 100 requests per minute (increased from 30)
-
-function getClientIdentifier(request: NextRequest): string {
-  const forwarded = request.headers.get('x-forwarded-for');
-  const realIp = request.headers.get('x-real-ip');
-  const ip = forwarded?.split(',')[0] || realIp || 'unknown';
-  return ip;
-}
-
-function checkRateLimit(clientId: string): boolean {
-  const now = Date.now();
-  const clientData = RATE_LIMIT.get(clientId);
-  
-  if (!clientData || now > clientData.resetTime) {
-    RATE_LIMIT.set(clientId, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
-    return true;
-  }
-  
-  if (clientData.count >= RATE_LIMIT_MAX_REQUESTS) {
-    return false;
-  }
-  
-  clientData.count++;
-  return true;
-}
+import { SECURITY_HEADERS, getClientIdentifier, checkRateLimit, validateRequest, createSecureResponse, createErrorResponse } from '@/lib/security';
 
 export async function GET(request: NextRequest) {
   const startTime = Date.now();
   
   try {
-    // Rate limiting (relaxed for public access)
+    // Validate request
+    const validation = validateRequest(request);
+    if (!validation.valid) {
+      return createErrorResponse(validation.error!, 400);
+    }
+
+    // Rate limiting
     const clientId = getClientIdentifier(request);
-    if (!checkRateLimit(clientId)) {
-      return NextResponse.json(
-        { error: 'Rate limit exceeded. Please try again later.' },
-        { 
-          status: 429,
-          headers: {
-            ...SECURITY_HEADERS,
-            'Retry-After': '60'
-          }
-        }
+    if (!checkRateLimit(clientId, 'status')) {
+      return createErrorResponse(
+        'Rate limit exceeded. Please try again later.',
+        429,
+        { 'Retry-After': '60' }
       );
     }
 
@@ -161,13 +125,10 @@ export async function GET(request: NextRequest) {
       rawData: data.substring(0, 500) // First 500 chars for debugging
     };
 
-    return NextResponse.json(result, {
-      headers: {
-        ...SECURITY_HEADERS,
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0'
-      }
+    return createSecureResponse(result, 200, {
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
     });
     
   } catch (error) {
@@ -176,16 +137,10 @@ export async function GET(request: NextRequest) {
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch school status';
     const processingTime = Date.now() - startTime;
     
-    return NextResponse.json(
-      { 
-        error: errorMessage,
-        processingTime: `${processingTime}ms`,
-        timestamp: new Date().toISOString()
-      },
-      { 
-        status: 500,
-        headers: SECURITY_HEADERS
-      }
+    return createErrorResponse(
+      errorMessage,
+      500,
+      { processingTime: `${processingTime}ms` }
     );
   }
 }

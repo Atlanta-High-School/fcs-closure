@@ -1,17 +1,41 @@
 import { put } from '@vercel/blob';
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
+import { SECURITY_HEADERS, getClientIdentifier, checkRateLimit, validateRequest, createSecureResponse, createErrorResponse } from '@/lib/security';
 
-export async function POST(request: Request): Promise<NextResponse> {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
+    // Validate request
+    const validation = validateRequest(request);
+    if (!validation.valid) {
+      return createErrorResponse(validation.error!, 400);
+    }
+
+    // Rate limiting (very strict for uploads)
+    const clientId = getClientIdentifier(request);
+    if (!checkRateLimit(clientId, 'upload')) {
+      return createErrorResponse(
+        'Upload rate limit exceeded. Please try again later.',
+        429,
+        { 'Retry-After': '300' } // 5 minutes
+      );
+    }
+
+    // Check content length
+    const contentLength = request.headers.get('content-length');
+    if (contentLength && parseInt(contentLength) > 10 * 1024 * 1024) { // 10MB limit
+      return createErrorResponse('File too large. Maximum size is 10MB.', 413);
+    }
     const { searchParams } = new URL(request.url);
     const filename = searchParams.get('filename');
     const fileType = searchParams.get('type') || 'general';
 
     if (!filename) {
-      return NextResponse.json(
-        { error: 'Filename is required' },
-        { status: 400 }
-      );
+      return createErrorResponse('Filename is required', 400);
+    }
+
+    // Validate filename
+    if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+      return createErrorResponse('Invalid filename', 400);
     }
 
     // Add timestamp to filename to avoid conflicts
@@ -24,7 +48,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     });
 
     // Return the blob information
-    return NextResponse.json({
+    return createSecureResponse({
       success: true,
       url: blob.url,
       filename: uniqueFilename,
@@ -34,12 +58,10 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   } catch (error) {
     console.error('Upload error:', error);
-    return NextResponse.json(
-      { 
-        error: 'Failed to upload file',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
+    return createErrorResponse(
+      'Failed to upload file',
+      500,
+      { message: error instanceof Error ? error.message : 'Unknown error' }
     );
   }
 }

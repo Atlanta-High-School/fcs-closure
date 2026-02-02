@@ -1,10 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { SECURITY_HEADERS, getClientIdentifier, checkRateLimit, validateRequest, createSecureResponse, createErrorResponse } from '@/lib/security';
 
 const FCS_WEATHER_URL = 'https://www.forsyth.k12.ga.us/district-services/communications/inclement-weather-closure';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     console.log('🏫 FCS Weather API: Fetching status from Forsyth County Schools');
+    
+    // Validate request
+    const validation = validateRequest(request);
+    if (!validation.valid) {
+      return createErrorResponse(validation.error!, 400);
+    }
+
+    // Rate limiting
+    const clientId = getClientIdentifier(request);
+    if (!checkRateLimit(clientId, 'status')) {
+      return createErrorResponse(
+        'Rate limit exceeded. Please try again later.',
+        429,
+        { 'Retry-After': '60' }
+      );
+    }
     
     const response = await fetch(FCS_WEATHER_URL, {
       headers: {
@@ -25,7 +42,7 @@ export async function GET() {
     
     console.log('✅ FCS Weather API: Status extracted successfully');
     
-    return NextResponse.json({
+    return createSecureResponse({
       success: true,
       status,
       lastUpdated: new Date().toISOString(),
@@ -34,13 +51,10 @@ export async function GET() {
 
   } catch (error) {
     console.error('💥 FCS Weather API: Error fetching weather status:', error);
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to fetch Forsyth County Schools weather status',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
+    return createErrorResponse(
+      'Failed to fetch Forsyth County Schools weather status',
+      500,
+      { message: error instanceof Error ? error.message : 'Unknown error' }
     );
   }
 }
